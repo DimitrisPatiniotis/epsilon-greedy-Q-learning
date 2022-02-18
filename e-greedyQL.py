@@ -1,6 +1,5 @@
 import numpy as np
 import random
-from time import sleep
 import matplotlib.pyplot as plt
 
 epsilon = 1
@@ -18,7 +17,6 @@ actions = [
     [1,0] , [1,1]
 ]
 
-# Q_table = [1, 1, 1, 1]
 
 class Agent:
     
@@ -26,7 +24,7 @@ class Agent:
         self.name = name
         self.weight = weight
         self.epsilon = epsilon
-        self.q_table = [1, 1, 1, 1]
+        self.q_table = [0, 0, 0, 0]
         self.actions = actions
         self.decay = decay
         self.move = None
@@ -34,8 +32,8 @@ class Agent:
         self.total_reward = 0
 
     def reduce_epsilon(self):
-        if self.epsilon >= 0.01:
-            self.epsilon = self.epsilon - self.decay
+        if self.epsilon != 0.:
+            self.epsilon = round((self.epsilon - self.decay), 2)
 
     def select_move(self):
         if self.epsilon <= 0:
@@ -110,12 +108,20 @@ def test_overweight(state):
 def get_avg_total_r(agents):
     return sum([i.total_reward for i in agents])
 
-def main():
+def get_avg_r_by_weight(weight, agents):
+    agent_list = [i for i in agents if i.weight == weight]
+    return sum([i.reward for i in agent_list])/len(agent_list)
+
+
+def main(iter, best_train):
+    its = iter
     agents, len_agents = generate_agents([(2,0.6), (5, 0.4), (8, 0.2)])
     total_mistakes = 0
-    mistakes_per_turn = []
-    avg_rewards = []
-    for turn in range(1,2500):
+    mistakes_per_turn, avg_rewards = [], []
+
+    six_tr, four_tr, two_tr = [], [], [] 
+
+    for turn in range(1,its):
         for i in agents: i.make_move()
         turn_state = calculate_total_distribution(agents)
         
@@ -125,25 +131,57 @@ def main():
             total_mistakes += 1
             for i in agents:
                 if i.move == test_overweight(turn_state):
-                    distribute_reward([i], turn_state)
-                    update_q_values([i])
+                    if best_train:
+                        distribute_reward([i], turn_state)
+                        update_q_values([i])
                     i.make_move()
             turn_state = calculate_total_distribution(agents)
-        mistakes_per_turn.append(round(total_mistakes/turn, 3))
-        avg_rewards.append(get_avg_total_r(agents))
+
+
         distribute_reward(agents, turn_state)
         update_q_values(agents)
         if turn%20 == 0:
             for i in agents:
                 i.reduce_epsilon()
 
+        mistakes_per_turn.append(round(total_mistakes/turn, 3))
+        avg_rewards.append(get_avg_total_r(agents))
+
+        six_tr.append(get_avg_r_by_weight(0.6, agents))
+        four_tr.append(get_avg_r_by_weight(0.4, agents))
+        two_tr.append(get_avg_r_by_weight(0.2, agents))
+
+    fig, ax= plt.subplots()
+    ax.plot(range(1,its), mistakes_per_turn)
+    ax.set(xlabel='episodes', ylabel='mistakes', title='Avarage Mistakes Per Episode')
+    ax.grid()
+    plt.show()
+
     fig, ax = plt.subplots()
-    ax.plot(range(1,2500), mistakes_per_turn)
-    ax.set(xlabel='time (s)', ylabel='mistakes', title='Avarage Mistakes Per Turn')
+    ax.plot(range(1,its), avg_rewards)
+    ax.set(xlabel='episodes', ylabel='avg total rewards', title='Avarage Total Rewards Per Episode')
+    ax.grid()
+    plt.show()
+
+    fig, ax = plt.subplots()
+    ax.plot(range(1,its), six_tr)
+    ax.set(xlabel='episodes', ylabel='reward', title='Avarage Episode Reward Per Agent (0.6 weight)')
+    ax.grid()
+    plt.show()
+
+    fig, ax = plt.subplots()
+    ax.plot(range(1,its), four_tr)
+    ax.set(xlabel='episodes', ylabel='reward', title='Avarage Episode Reward Per Agent (0.4 weight)')
+    ax.grid()
+    plt.show()
+
+    fig, ax = plt.subplots()
+    ax.plot(range(1,its), two_tr)
+    ax.set(xlabel='episodes', ylabel='reward', title='Avarage Episode Reward Per Agent (0.2 weight)')
     ax.grid()
     plt.show()
 
 
 
 if __name__ == '__main__':
-    main()
+    main(2500, best_train=False)
