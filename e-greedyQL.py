@@ -18,7 +18,7 @@ actions = [
     [1,0] , [1,1]
 ]
 
-Q_table = [1, 1, 1, 1]
+# Q_table = [1, 1, 1, 1]
 
 class Agent:
     
@@ -26,7 +26,7 @@ class Agent:
         self.name = name
         self.weight = weight
         self.epsilon = epsilon
-        self.q_table = Q_table
+        self.q_table = [1, 1, 1, 1]
         self.actions = actions
         self.decay = decay
         self.move = None
