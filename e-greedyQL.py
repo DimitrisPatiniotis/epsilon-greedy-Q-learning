@@ -79,12 +79,17 @@ def calculate_total_distribution(agents):
     for i in distribution: rounded_distr.append(round_list_numbers(i))
     return rounded_distr
 
-def distribute_reward(agents, state):
+def get_reward(state):
     # Initialize Reward List
     reward = [[0,0],[0,0]]
     for i in range(len(state)):
         for x in range(len(state[i])):
             reward[i][x] = round((2.5 - state[i][x]),1)
+
+    print(reward)
+    return reward
+
+def distribute_reward(agents, reward):
     for i in agents:
         i.reward = reward[i.move[0]][i.move[1]]
         i.total_reward += reward[i.move[0]][i.move[1]]
@@ -120,6 +125,7 @@ def main(iter, best_train):
     mistakes_per_turn, avg_rewards = [], []
 
     six_tr, four_tr, two_tr = [], [], [] 
+    pos_1, pos_2, pos_3, pos_4 = [],[],[],[]
 
     for turn in range(1,its):
         for i in agents: i.make_move()
@@ -132,13 +138,23 @@ def main(iter, best_train):
             for i in agents:
                 if i.move == test_overweight(turn_state):
                     if best_train:
-                        distribute_reward([i], turn_state)
+                        r = get_reward(turn_state)
+                        distribute_reward([i], r)
                         update_q_values([i])
+                        pos_1.append(r[0][0])
+                        pos_2.append(r[0][1])
+                        pos_3.append(r[1][0])
+                        pos_4.append(r[1][1])
+
                     i.make_move()
             turn_state = calculate_total_distribution(agents)
 
-
-        distribute_reward(agents, turn_state)
+        r = get_reward(turn_state)
+        distribute_reward(agents, r)
+        pos_1.append(r[0][0])
+        pos_2.append(r[0][1])
+        pos_3.append(r[1][0])
+        pos_4.append(r[1][1])
         update_q_values(agents)
         if turn%20 == 0:
             for i in agents:
@@ -179,6 +195,17 @@ def main(iter, best_train):
     ax.plot(range(1,its), two_tr)
     ax.set(xlabel='episodes', ylabel='reward', title='Avarage Episode Reward Per Agent (0.2 weight)')
     ax.grid()
+    plt.show()
+
+    turns =range(len(pos_1))
+    plt.plot(turns, pos_1, label = "Reward of 1st tile")
+    plt.plot(turns, pos_2, label = "Reward of 2st tile")
+    plt.plot(turns, pos_3, label = "Reward of 3st tile")
+    plt.plot(turns, pos_4, label = "Reward of 4st tile")
+    plt.title('Reward of tile per turn')
+    plt.xlabel('turns')
+    plt.ylabel('reward')
+    plt.legend(["Reward of 1st tile","Reward of 2nd tile","Reward of 3rd tile","Reward of 4th tile"])
     plt.show()
 
 
