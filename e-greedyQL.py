@@ -29,7 +29,7 @@ class Agent:
         self.decay = decay
         self.move = None
         self.reward = None
-        self.total_reward = 0
+        self.accumulated_reward = 0
 
     def reduce_epsilon(self):
         if self.epsilon != 0.:
@@ -50,8 +50,8 @@ class Agent:
     
     def get_reward(self, reward):
         self.reward = reward
-        self.total_reward += reward
-        print(self.total_reward)
+        self.accumulated_reward += reward
+
 
     def update_q(self):
         index = self.actions.index(self.move)
@@ -86,13 +86,12 @@ def get_reward(state):
         for x in range(len(state[i])):
             reward[i][x] = round((2.5 - state[i][x]),1)
 
-    print(reward)
     return reward
 
 def distribute_reward(agents, reward):
     for i in agents:
         i.reward = reward[i.move[0]][i.move[1]]
-        i.total_reward += reward[i.move[0]][i.move[1]]
+        i.accumulated_reward += reward[i.move[0]][i.move[1]]
 
 
 def update_q_values(agents):
@@ -111,7 +110,7 @@ def test_overweight(state):
         return False
 
 def get_avg_total_r(agents):
-    return sum([i.total_reward for i in agents])
+    return sum([i.accumulated_reward for i in agents])
 
 def get_avg_r_by_weight(weight, agents):
     agent_list = [i for i in agents if i.weight == weight]
@@ -131,7 +130,6 @@ def main(iter, best_train):
         for i in agents: i.make_move()
         turn_state = calculate_total_distribution(agents)
         
-        time = 0
 
         while test_overweight(turn_state) != False:
             total_mistakes += 1
@@ -175,7 +173,13 @@ def main(iter, best_train):
 
     fig, ax = plt.subplots()
     ax.plot(range(1,its), avg_rewards)
-    ax.set(xlabel='episodes', ylabel='avg total rewards', title='Avarage Total Rewards Per Episode')
+    ax.set(xlabel='episodes', ylabel='accumulated reward', title='Avarage Accumulated Rewards Per Episode')
+    ax.grid()
+    plt.show()
+
+    fig, ax = plt.subplots()
+    ax.plot(range(1,its), [i/(avg_rewards.index(i)+1) for i in avg_rewards])
+    ax.set(xlabel='episodes', ylabel='average agent reward', title='Average Agent Reward per Episode')
     ax.grid()
     plt.show()
 
@@ -184,6 +188,7 @@ def main(iter, best_train):
     ax.set(xlabel='episodes', ylabel='reward', title='Avarage Episode Reward Per Agent (0.6 weight)')
     ax.grid()
     plt.show()
+
 
     fig, ax = plt.subplots()
     ax.plot(range(1,its), four_tr)
@@ -211,4 +216,4 @@ def main(iter, best_train):
 
 
 if __name__ == '__main__':
-    main(2500, best_train=False)
+    main(2500, best_train=True)
